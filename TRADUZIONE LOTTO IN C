@@ -1,0 +1,593 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <unistd.h>
+int main(){
+        char* introductionMenu[] ={
+                "Step del gioco",
+                "1) Inserimento dell'importo",
+                "2) Scegliere su quante ruote giocare",
+                "2.1) Se si sceglie di giocare su una ruota, scegliere quale",
+                "3) Inserire i propri numeri",
+                "4) Inserire su cosa si vuole scommettere"
+        };
+
+     char* numberOfWheelMenu[]= {
+                "Su quante ruote vuoi puntare?",
+                "[1] - Scelta libera di una ruota",
+                "[2] - Tutte e 10 le ruote"
+        };
+   
+   char* specificWheelsMenu[]= {
+                "Su quale ruota vuoi puntare?",
+                "[1] - BARI",
+                "[2] - CAGLIARI",
+                "[3] - FIRENZE",
+                "[4] - GENOVA",
+                "[5] - MILANO",
+                "[6] - NAPOLI",
+                "[7] - PALERMO",
+                "[8] - ROMA",
+                "[9] - TORINO",
+                "[10] - VENEZIA"
+        };
+
+    char* betTypeMenu[]= {
+                "Quale puntate vuoi scegliere?",
+                "[1] - SINGOLO",
+                "[2] - AMBO",
+                "[3] - TERNA",
+                "[4] - QUATERNA",
+                "[5] - CINQUINA"
+        };
+
+    char* continueToPlayMenu[]= {
+                "Voui continuare a giocare",
+                "[1] - Si",
+                "[2] - No"
+        };
+
+    int* playerNumbers[]={
+
+            // Number of the player
+        int playerBetTypes []; // The bets of the player (singolo, ambo, terna, quaterna, cinquina)
+        int[][] wheels = new int[10][5]; // The 2d array for store all the wheels
+        int numberOfWheels; // How many wheels the player chooses to player on
+        int whatWheel = 0; // number of the wheel that the player wants to play on
+        int counterOfPlayedNumbers = 0; // The number of the numbers the player played
+        double amount=0; // How much money the player has bet
+        double price = 0; // How much money the player wins
+
+    };
+    
+    int continueToPlay;
+    char _pause;
+
+    int clrScr();  
+    int printLottoWord();
+
+
+    do{
+        printMenu(introductionMenu);
+        printf("Premi invio per iniziare a giocare");
+        scanf("%c", &_pause);
+
+        printf("tep 1\n\tInserire l'importo\n");
+        // Ask the player to insert the amount of money he wants to bet
+        amount=takeAmount();
+
+        printf("tep 2\n\tScegliere su quante ruote giocare\n");
+        // Ask the player how many wheels he what to bet on
+        numberOfWheels = takeNumberOfWheels(numberOfWheelMenu);
+
+        if(numberOfWheels <= 1){
+            printf("tep 2.1\n\tScegliere su quale ruota giocare\n");
+            whatWheel = takeSpecificWheel(specificWheelsMenu);
+        }
+
+        // If the player chose to play on all the wheel, the whatWheel variable is 0.
+        // Generate the wheel numbers
+        if (whatWheel == 0) {
+                for (int i = 0; i < numberOfWheels; i++){
+                    wheels[i] = extractedWheel();
+                }
+                    
+            }
+            
+        else{
+                wheels[whatWheel - 1] = extractedWheel();
+            }
+
+            printf("Step 3\n\tInserire i propri numeri\n");
+            // take the player numbers
+            playerNumbers == takePlayerNumbers();
+    
+    /* calculate the number of numbers who player played */
+    for (int i:playerNumbers) {
+                if (i != 0) counterOfPlayedNumbers++;
+                else break; // If the number is 0, the array is finished, so interrupt the cycle
+            }
+
+    /* END CALCULATION */
+    printf("Step 4\n\tInserire su cosa si vuole scommettere\n");
+    // Take the bets of the player
+    playerBetTypes = takePlayerBetTypes(counterOfPlayedNumbers, betTypeMenu);
+
+    // if the player chooses to play on all the wheels, whatWheel will be 0 so calculate the winning prize for all the wheel
+    if (whatWheel == 0) {
+                printf("Ecco le ruote: \n");
+                for (int i = 0; i < numberOfWheels; i++) {
+                    printWheel(wheels[i]);
+                    printf("\n");
+                    price += calculationWinningPrice(playerNumbers, wheels[i], playerBetTypes, amount, numberOfWheels, counterOfPlayedNumbers);
+                }
+            }
+            // if the player chooses to play on a specific wheel, the whatWheel number will be a number so calculate the prize for that specific wheel
+            else{
+                printf("\n\nEcco la ruota che hai scelto: ");
+                printWheel(wheels[whatWheel - 1]);
+                price += calculationWinningPrice(playerNumbers, wheels[whatWheel - 1], playerBetTypes, amount, numberOfWheels, counterOfPlayedNumbers);
+            }
+
+            printf("\n\nEcco i tuoi numeri: ");
+            printWheel(playerNumbers);
+                
+
+        printf("\n\nHai vinto: " + price + " euro\n");
+        // Print all the probability
+        for (int i = 1; i <= counterOfPlayedNumbers && i <= 5; i++) {
+                printf("Le tue probabilità di fare un %d sono: %.10f%%\n", i,  winningProbability(counterOfPlayedNumbers, i));
+            }
+
+        printMenu(continueToPlayMenu);
+            printf("Inserisci la scelta: ");
+            scanf("%d", &continueToPlay);
+    } while(continueToPlay == 1);
+        printf("\n");
+
+}
+
+ /* --------------
+     * PLAYER METHODS
+     * --------------
+     */
+
+    /*
+    This method returns the amount which the player wants to bet
+    */
+
+double takeAmount(){
+    double amount;
+
+        do {
+            printf("Inserisci importo: ");
+            scanf("%lf", &amount);
+
+            // if the player inserts a number out of range, tell him that is a not vvalid number
+            if (amount < 0 || amount > 200)
+                printf("L'importo deve essere compreso tra 0 e 200.");
+        } while(amount < 0 || amount > 200);
+
+        return amount;
+}
+
+    /*
+    This method returns the array of numbers who player wants to bet
+    */
+
+    int [] takePlayerNumbers() {
+        int[] numbers = new int[10];
+        boolean[] numbersChecker = new boolean[90];
+        boolean correctInserction, continueToInsert = true;
+
+        int number;
+
+        clrScr();
+        printLottoWord();
+
+        // Ask the player to insert a number
+        printf("Inserisci i numeri su cui si vuole scommettere.\nSe non vuoi inserire altri numeri inserire 0.");
+
+        for (int i = 0; i < numbers.length && continueToInsert; i++) {
+            do{
+                correctInserction = true;
+
+                // Ask the player to insert a number
+                System.out.print("\nInserisci un numero (inserire 0 per smettere di inserire): ");
+                number = scanner.nextInt();
+
+                /* ERROR MESSAGE */
+                // Check if the number is different from 0
+                if (number != 0) {
+                    // Check if the number is in the correct interval
+                    if (number < 0 || number > 90) {
+                        System.out.println("Devi inserire un numero tra 1 e 90");
+                        correctInserction = false;
+                    }
+                    // check if the number is already insert
+                    else if (numbersChecker[number - 1]) {
+                        System.out.println("Numero gia inserito.");
+                        correctInserction = false;
+                    }
+                    // if the number is in the right interval and isn't already insert
+                    else {
+                        numbersChecker[number - 1] = true; // set the variable of the number to true,
+                        // so it means that is already insert
+                        numbers[i] = number; // put the number in the right place
+                    }
+                }
+                /* END ERROR MESSAGE */
+                else{
+                    continueToInsert = false;
+                }
+                     
+            
+            } while(!correctInserction);      
+
+        }
+        
+        return numbers;
+    }
+
+    /*
+    This method returns the array that contains all the player betTypes
+    param = playedNumbers counter of how much numbers the player played
+    param = menuOptions array for print the menu
+    */
+int[] takePlayerBetTypes(int playedNumbers, String[] menuOptions) {
+
+        int [] betTypes = new int[5];
+          boolean[] betChecker = new boolean[5];
+        int userBet;
+        boolean continueToInsert = true, correctInserction;
+
+        clrScr();
+        printLottoWord();
+
+        printMenu(menuOptions)
+    
+    for(int i = 0; i < betTypes.length && continueToInsert; i++){
+        do{
+            correctInserction = true;
+
+            printf("\nInserisci scelta (inserisci 0 per smettere di inserire): ");
+            scanf("%d", &userBet);
+
+            // Check if the number is different from 0
+             if (userBet != 0) {
+                    // check if the number it's available in the list of bet
+                    // if it's not available, tell him that isn't a correct number
+                    if (userBet < 0 || userBet > 5) {
+                        printf("Devi inserire un numero tra 1 e 5");
+                        correctInserction = false;
+                    }
+            }
+            // if the player inserts a bet which is already insert
+            // tell him that the number is already insert
+            else if (betChecker[userBet - 1]) {
+                        printf("Numero gia inserito.");
+                        correctInserction = false;
+                    }
+            // if the player inserts a number, which is bigger than the numbers of numbers that he plays,
+            // Tell him that the number he can't afford the bet type        
+            else if (userBet > playedNumbers) {
+                        System.out.println(
+                                "La quantita' dei numeri che hai inserito e' troppo piccola per porter scegliere questa opzione."
+                        );
+                        correctInserction = false;
+                    }
+                    // if the number is in the correct interval, isn't already insert and is minor then the count of played numbers
+            else {
+                    betChecker[userBet - 1] = true; // set the variable of the number to true,
+                    // so it means that is already insert
+                    betTypes[userBet - 1] = userBet; // put the number in the right place
+                    }
+                
+                /* END ERROR MESSAGE */
+            else{
+                    continueToInsert = false;
+                }
+                    
+        } while (!correctInserction);
+    }   
+
+    return betTypes;
+}
+
+    /* -------------
+     * WHEEL METHODS
+     * -------------
+     */
+
+
+    /*
+    This method returns if the player wants to play on 1 or 10 wheels
+    param = menuOption array of string for the menu
+    */
+
+int takeNumberOfWheels(String[] menuOption){
+    Scanner scanner = new Scanner(System.in);
+        int choice;
+        int numberOfWheels;
+        boolean correctInserction;
+
+        clrScr();
+        printLottoWord();
+
+        printMenu(menuOption);
+    do{
+        correctInserction = true;
+
+            printf("\nInserisci la tua scelta: ");
+            scanf("%d", &choice);
+
+            // If the user types a wrong choice, tell him that it's wrong
+            if (choice != 1 && choice != 2) {
+                printf("Puoi scegliere solo 1 o 2");
+                correctInserction = false;
+            }
+    } while (!correctInserction);
+
+    if (choice == 2){
+            numberOfWheels = 10; // set the number of wheels to ten
+            // if the player wnats to bet on 1 wheel, the choice is 1, so set the nummberOfWheel equal to choic
+    }
+    else{
+         numberOfWheels = choice;
+    }
+    return numberOfWheels;
+}
+
+int takeSpecificWheel(String[] menuOption){
+    int specificWheel;
+    boolean correctInserction;
+
+        clrScr();
+        printLottoWord();
+
+        printMenu(menuOption);
+
+        do {
+            correctInserction = true;
+
+            printf("\nInserisci la tua scelta: ");
+            scanf("%d", &specificWheel);
+
+            // If the user types a wrong choice, tell him that it's wrong
+            if (specificWheel < 1 || specificWheel > 10) {
+                printf("Devi scegire 1 ruota o 10");
+                correctInserction = false;
+            }
+        } while (!correctInserction);
+
+    return specificWheel;
+}
+
+    /*
+    This method returns the array of a wheel
+    */
+int[] extractedWheel() {
+    int[] numbers = new int[5];
+    int minValue = 1, maxValue = 90;
+
+        for (int i = 0; i < numbers.length; i++) {
+            numbers[i] = randomValue(minValue, maxValue); // Assign random value to numbers[i]
+
+            if (i > 0) valueChecker(numbers, i, minValue, maxValue); // check if the value isn't repeating
+        }
+
+        return numbers; // return array
+}
+
+    /*
+    Check if the value is available
+    param = array array of number that needs to check
+    param = i index of the for in extractedWheel method
+    param = minValue minimum value to pass in randomValue method
+    param = maxValue maximum value to pass in randomValue method
+    */
+
+void valueChecker (int[] array, int i, int minValue, int maxValue){
+    for (int k = 0; k < i; k++) {
+            // If the value is already in the array, reassign it and recheck all array
+            if (array[i] == array[k]) {
+                array[i] = randomValue(minValue, maxValue); // Assign another random value to array[i]
+                k = -1; // Restart the check
+            }
+        }
+}
+
+    /*
+    Print the array
+    */
+
+void printWheel(int[] array){
+    for (int i:array) {
+            if (i == 0)
+                break;
+            printf(i + " ");
+        }
+}
+
+    /* ---------------
+     * WINNING METHODS
+     * ---------------
+     */
+
+    /*
+    Calculation of the price that the player wins
+
+    param = playerNumbers player numbers
+    param = wheel number of the wheel
+    param = playerBetTypes The bets of the player
+    param = amount cash which the player bet
+    param = numberOfWheels how many wheel player bet on
+    param = counterOfPlayedNumbers how many number player bet
+    */
+
+double calculationWinningPrice(int[] playerNumbers; int[] wheel; int[] playerBetTypes; double amount; int numberOfWheels; int counterOfPlayedNumbers){
+    
+    int betFromWheel = returnBetFromWheel(playerNumbers, wheel);;
+        int howManyBet;
+        double price = 0;
+
+        // if I don't guess anything return 0 (the initial value of the variable price)
+        if (betFromWheel == 0)
+            return price;
+
+        for (int i = betFromWheel; i >= 1; i--) {
+            // Example to explain this if:
+            // I have guessed 4 numbers, but I have bet on ambo.
+            // So because guessed 4 numbers, I have done 6 ambo.
+            // This for return the winning of the 6 ambo.
+            if (playerBetTypes[i - 1] != 0) {
+                howManyBet = retriveWinAmount(i, betFromWheel);
+                price += winningPrize(amount, numberOfWheels, counterOfPlayedNumbers, i) * howManyBet;
+            }
+        }
+
+        return price;
+}
+
+    /*
+    Return how much numbers the users guess
+    param = = playerNumbers array of the player numbers
+    param = wheelNumbers array of numbers of a wheels
+    */
+int returnBetFromWheel(int[] playerNumbers; int[] wheelNumbers){
+    int betTypeOfWheel = 0;
+
+        // For every number in playerNumbers check if in the array of the wheel there is another number that is equal to it.
+        // If there is then update the bet counter
+        for (int playerNumber : playerNumbers) {
+            for (int wheelNumber : wheelNumbers) {
+                if (playerNumber == wheelNumber)
+                    betTypeOfWheel++; // update the bet counter
+            }
+        }
+
+        return betTypeOfWheel;
+}
+
+double winningPrize(double amount, int numberOfWheels, int counterOfPlayedNumbers, int betType){
+    // 2d array for prizes if the player inserts 1 euro
+    // The raw represent the played numbers of the player
+    // The column represents the bet types
+    double[][] prizes = {
+                {11.23},
+                {5.62, 250.00},
+                {3.74, 83.33, 4500.00},
+                {2.81, 41.67, 1125.00, 120000.00},
+                {2.25, 25.00, 450.00,  24000.00, 6000000.00},
+                {1.87, 16.67, 225.00,  8000.00,  1000000.00},
+                {1.60, 11.90, 128.57,  3428.57,  285714.29},
+                {1.40, 8.93,  80.36,   1714.29,  107142.86},
+                {1.25, 6.94,  53.57,   952.38,   47619.05},
+                {1.12, 5.56,  37.50,   571.43,   23809.52}
+        };
+
+        double winning;
+
+        // Calculate the winning
+        winning = prizes[counterOfPlayedNumbers - 1][betType - 1] * amount / numberOfWheels;
+
+        return winning;
+
+}
+
+    /*
+    userWins = player numbers equals to the wheel
+    betType = sing, ambo, terna, quaterna, cinquina
+    */
+int retriveWinAmount(int betType, int userWins){
+    return factorial(userWins) / (factorial(betType) * factorial(userWins - betType));
+}
+
+/* Give the factorial of a number */
+int factorial(int input){
+    if (input <= 1) {
+            return 1;
+    }
+
+    int result = 1;
+
+        for (int inputMultiplier = 2; inputMultiplier <= input; inputMultiplier++) {
+            result *= inputMultiplier;
+        }
+
+        return result;
+}
+
+    /*
+    Calculate the winning probability
+
+    param playedNumbers = how many numbers the player played
+    param bet = bet for which I want to calculate the odds
+    */
+double  winningProbability(int playedNumbers, int bet){
+    double totalNumbers = 90;
+    double denominatore = 90;
+    double probability;
+
+        if (bet != 1) {
+            for (int i = 1; i < bet; i ++) {
+                denominatore *= totalNumbers - 1;
+            }
+        }
+
+        probability = (playedNumbers / denominatore)  * 100;
+
+        return probability;
+}
+
+    /* --------------
+     * SERVICE METHODS
+     * ---------------
+     */
+void printMenu(String[] option){
+    for (int i = 0; i < option[0].length(); i++)
+            printf("=");
+        printf(); // This is for going on the next line
+
+        printf(option[0]);
+
+        // This for print "=" for all the length of the title of the menu
+        for (int i = 0; i < option[0].length(); i++)
+            printf("=");
+        printf(); // This is for going on the next line
+
+
+        // print out all the possibility
+        for (int i = 1; i < option.length; i++) {
+            printf(option[i]);
+        } 
+}
+
+void printLottoWord() {
+        printf(
+                        "          ..:---::.         .:----:..         .:----:.         ..:----:.         .::---:..          \n" +
+                        "        :-=+++++++=-:.   .:=++++++++=-.    .-=++++++++=-.    :-=++++++++=:.   .:==+++++++=-:        \n" +
+                        "      .=++-:.   .:-=+=:.:=+=-..   .:=++-..-++=:..  ..:=+=-..=++=:.   .:-=+=: :=+=-:.   .:-++=.      \n" +
+                        "     :++-. =*=     .-++=++-. :-::--. .=+==+=:.-++++++-.:=+=++=..=++++++:.-++=++-.         .=++:     \n" +
+                        "    .=+-.  +**       -+++: .===+==+*=..=++=.  -++**++-  .+++=. .=+***++:  -+++:   .-=+=:.  .=+=.    \n" +
+                        "    :++.   +**       .++= .+=++=-+*-*+ :++=     -**-     =++:     =**.    .+++.   +*****=   :++:    \n" +
+                        "    -++.   +**        ++= .*-*=..-++== :++=     -**-     =++:     =**.     =++    ******=   .++-    \n" +
+                        "    :++-   +**:::.   :+++..+*==+-=*-+. -++=.    -**-    .=++-     =**.    :+++:   -****+:   -++:    \n" +
+                        "     =++:  +******  :=+++=..-++++===. -++++=.   :**:   .=++++:    =**.   .=+++=.           :++-     \n" +
+                        "     .-++-..:::::..-++=:=+=-..::.. .:=++-:=+=:. .--. .:=+=:-++-:. .-: ..-=+=:=+=-..     .:-++-.     \n" +
+                        "       :=+++=====+++=:. .:=++======+++-.  .-+++======++=-.  :=+++======++=:. .:=++======+++=:       \n" +
+                        "         .:--====-:..     .:--====--:.      .:--====--:.      .:--====--..     .:--====--:.         \n"
+        );
+
+        printf("\n\n");
+}
+
+
+
+
+
+
+
+
+
+
